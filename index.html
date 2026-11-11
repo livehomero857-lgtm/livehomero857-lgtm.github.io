@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homero Live - Sala</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{background:#0a0a0a;color:#fff}
+.top{background:#111;padding:10px 12px;display:flex;gap:8px;align-items:center;font-size:13px}
+.top b{color:#ffcc00}
+#jitsi-main{width:100%;height:420px;background:#000;position:relative}
+#jitsi-main iframe{width:100%;height:100%;border:0}
+.badge{position:absolute;top:10px;left:10px;background:#ff2d55;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:bold;z-index:10}
+.part{padding:10px}
+.part b{color:#ffcc00;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.slot{background:#1a1a1a;border:1px solid #333;border-radius:10px;height:95px;display:flex;align-items:flex-end;padding:6px;font-size:11px;color:#ccc;position:relative;overflow:hidden}
+.slot span{position:relative;z-index:2;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:10px}
+.slot.active{border-color:#ffcc00}
+.controls{display:flex;gap:8px;flex-wrap:wrap;padding:0 10px}
+.controls button{flex:1;min-width:110px;padding:11px;border:none;border-radius:10px;font-weight:bold;font-size:12px;cursor:pointer}
+.btn-on{background:#ffcc00;color:#000}.btn-off{background:#222;color:#fff}
+.comments{margin:10px;background:#111;border:1px solid #222;border-radius:12px;padding:12px}
+.comments b{color:#ffcc00}
+#listaChat{margin-top:8px;font-size:13px;max-height:120px;overflow-y:auto}
+.chat-input{display:flex;gap:8px;margin-top:10px}
+.chat-input input{flex:1;padding:11px;border-radius:10px;border:none;background:#222;color:#fff}
+.chat-input button{background:#ff2d55;color:#fff;border:none;padding:0 16px;border-radius:10px;font-weight:bold}
+.setup{background:#111;margin:10px;padding:14px;border-radius:14px;text-align:center}
+.setup input{width:100%;padding:12px;border-radius:10px;border:none;background:#222;color:#fff;text-align:center;margin-top:8px}
+.setup button{width:100%;padding:14px;border:none;border-radius:10px;background:#ff2d55;color:#fff;font-weight:bold;font-size:16px;margin-top:10px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="setup" id="setup">
+  <div><b>🏠 HOMERO LIVE</b> - Hasta 15 personas</div>
+  <div style="font-size:13px;color:#aaa;margin-top:4px">Calidad HD - Cámara trasera / frontal</div>
+  <input id="miNombre" value="Homero" placeholder="Tu nombre">
+  <input id="codigoSala" value="HOMERO-8199" placeholder="Código de sala">
+  <button onclick="entrarSala()">🔴 ENTRAR A LA SALA</button>
+  <button onclick="copiar()" style="background:#222;margin-top:8px">📋 Copiar Link para WhatsApp</button>
+  <div id="linkBox" style="font-size:12px;color:#7CFC00;margin-top:8px;word-break:break-all"></div>
+</div>
+
+<div id="sala" style="display:none">
+  <div class="top"><span>Sala <b id="nombreSalaTop">HOMERO-8199</b></span><span>• Conectado a la sala - Activa cámara y micrófono</span></div>
+  <div style="padding:6px 12px;font-size:12px;color:#ffcc00">👑 Anfitrión / pantalla principal</div>
+  <div id="jitsi-main">
+    <div class="badge">● EN VIVO - HOMERO</div>
+    <div id="jitsi-container" style="width:100%;height:100%"></div>
+  </div>
+
+  <div class="part">
+    <b>👥 Participantes (15)</b>
+    <div class="grid" id="gridParticipantes">
+      <div class="slot active"><span>Homero 👑</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+      <div class="slot"><span>Invitado</span></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="btnCam" class="btn-off" onclick="toggleCam()">📷 Activar cámara</button>
+    <button class="btn-off" onclick="girarCam()">🔄 Girar cámara</button>
+    <button id="btnMic" class="btn-off" onclick="toggleMic()">🎤 Activar micrófono</button>
+    <button id="btnSonido" class="btn-on" onclick="toggleSonido()">🔊 Activar sonido</button>
+  </div>
+
+  <div class="comments">
+    <b>💬 Comentarios de la sala</b>
+    <div id="listaChat"><div>Bienvenido a HOMERO LIVE.</div></div>
+    <div class="chat-input">
+      <input id="msg" placeholder="Escribí un comentario...">
+      <button onclick="enviarChat()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://meet.ffmuc.net/external_api.js"></script>
+<script>
+let api=null, camOn=false, micOn=false, sonidoOn=true, camTrasera=false;
+function getLink(){
+  let c=document.getElementById('codigoSala').value.trim().toUpperCase().replace(/\s/g,'-')||'HOMERO-8199';
+  return 'https://meet.ffmuc.net/'+c;
+}
+function copiar(){
+  let l=getLink();
+  navigator.clipboard.writeText('Entrá a mi LIVE Homero Live: '+l);
+  document.getElementById('linkBox').innerText=l;
+  alert('Link copiado!');
+}
+function entrarSala(){
+  let nombre=document.getElementById('miNombre').value||'Homero';
+  let codigo=document.getElementById('codigoSala').value.trim().toUpperCase().replace(/\s/g,'-')||'HOMERO-8199';
+  document.getElementById('setup').style.display='none';
+  document.getElementById('sala').style.display='block';
+  document.getElementById('nombreSalaTop').innerText=codigo;
+  const options={
+    roomName:codigo,
+    parentNode:document.querySelector('#jitsi-container'),
+    width:'100%', height:'100%',
+    userInfo:{displayName:nombre},
+    configOverwrite:{
+      startWithAudioMuted:false,
+      startWithVideoMuted:false,
+      resolution:720,
+      constraints:{video:{height:{ideal:720}, width:{ideal:1280}}},
+      prejoinPageEnabled:false,
+      disableDeepLinking:true
+    },
+    interfaceConfigOverwrite:{
+      SHOW_JITSI_WATERMARK:false,
+      SHOW_WATERMARK_FOR_GUESTS:false,
+      TOOLBAR_BUTTONS:['microphone','camera','hangup','chat','raisehand','tileview','fullscreen']
+    }
+  };
+  api=new JitsiMeetExternalAPI('meet.ffmuc.net', options);
+  api.addEventListener('videoConferenceJoined', ()=>{
+    api.executeCommand('setVideoQuality', 720);
+  });
+}
+function toggleCam(){
+  if(!api) return; api.executeCommand('toggleVideo');
+  camOn=!camOn; document.getElementById('btnCam').innerText=camOn?'📷 Cámara ON':'📷 Activar cámara';
+  document.getElementById('btnCam').className=camOn?'btn-on':'btn-off';
+}
+function toggleMic(){
+  if(!api) return; api.executeCommand('toggleAudio');
+  micOn=!micOn; document.getElementById('btnMic').innerText=micOn?'🎤 Mic ON':'🎤 Activar micrófono';
+  document.getElementById('btnMic').className=micOn?'btn-on':'btn-off';
+}
+function toggleSonido(){
+  sonidoOn=!sonidoOn; document.getElementById('btnSonido').innerText=sonidoOn?'🔊 Sonido ON':'🔇 Sonido OFF';
+  document.getElementById('btnSonido').className=sonidoOn?'btn-on':'btn-off';
+}
+function girarCam(){
+  if(!api) return; camTrasera=!camTrasera;
+  alert(camTrasera?'Cámara trasera activada - usá el botón de cámara de Jitsi para cambiar':'Cámara frontal activada');
+}
+function enviarChat(){
+  let v=document.getElementById('msg').value.trim(); if(!v) return;
+  let n=document.getElementById('miNombre').value||'Homero';
+  let d=document.createElement('div'); d.innerHTML='<b>'+n+':</b> '+v;
+  document.getElementById('listaChat').appendChild(d);
+  document.getElementById('msg').value='';
+  if(api) api.executeCommand('sendChatMessage', v);
+}
+</script>
+</body>
+</html>

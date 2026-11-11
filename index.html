@@ -90,7 +90,7 @@ body{background:#0a0a0a;color:#fff}
   </div>
 </div>
 
-<script src="https://meet.ffmuc.net/external_api.js"></script>
+<script src="https://meet.jit.si/external_api.js"></script>
 <script>
 let api=null, camOn=false, micOn=false, sonidoOn=true, camTrasera=false;
 function getLink(){
@@ -128,7 +128,7 @@ function entrarSala(){
       TOOLBAR_BUTTONS:['microphone','camera','hangup','chat','raisehand','tileview','fullscreen']
     }
   };
-  api=new JitsiMeetExternalAPI('meet.ffmuc.net', options);
+  api=new JitsiMeetExternalAPI('meet.jit.si', options);
   api.addEventListener('videoConferenceJoined', ()=>{
     api.executeCommand('setVideoQuality', 720);
   });
